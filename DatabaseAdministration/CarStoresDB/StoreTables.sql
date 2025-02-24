@@ -1,4 +1,4 @@
-CREATE DATABASE CarStoresDB;
+USE CarStoresDB;
 GO
 
 CREATE TABLE SalesStores (
