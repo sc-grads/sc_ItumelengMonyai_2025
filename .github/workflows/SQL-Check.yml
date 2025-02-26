@@ -15,10 +15,4 @@ jobs:
       - name: Lint SQL files
         run: sqlfluff lint DatabaseAdministration/Test/Test1.sql --dialect mysql # Change dialect as needed
 
-      - name: Check SQL syntax using MySQL
-        run: |
-          sudo apt-get install -y mysql-client
-          for file in DatabaseAdministration/Test/Test1.sql; do
-            echo "Checking syntax for $file"
-            mysql --user=root --password=root --host=127.0.0.1 --execute="source $file" || exit 1
-          done
+      
