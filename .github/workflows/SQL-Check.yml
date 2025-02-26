@@ -13,7 +13,7 @@ jobs:
         run: pip install sqlfluff
 
       - name: Lint SQL files
-        run: sqlfluff lint DatabaseAdministration/CarStoresDB --dialect postgres # Change dialect as needed
+        run: sqlfluff lint DatabaseAdministration/Test --dialect postgres # Change dialect as needed
 
       - name: Check SQL syntax using MySQL
         run: |
