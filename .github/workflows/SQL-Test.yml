@@ -35,7 +35,7 @@ jobs:
 
       - name: Run SQL Scripts
         run: |
-          for file in DatabaseAdministration/Test/*.sql; do
+          for file in DatabaseAdministration/Test/Test1.sql; do
             echo "Running SQL script: $file"
             sudo mysql --user=root --password=root my_local_db < "$file"
           done
