@@ -1,0 +1,44 @@
+name: Setup MySQL and Create Database
+
+on:
+  workflow_run:
+    workflows: ["SQL Linting"]
+    types:
+      - completed
+
+jobs:
+  setup-mysql:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install MySQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mysql-server mysql-client
+
+      - name: Start MySQL Service
+        run: |
+          sudo systemctl start mysql
+          sudo systemctl status mysql || true  # Show status for debugging
+
+      - name: Check MySQL Connection
+        run: |
+          sudo mysqladmin ping --host=127.0.0.1 --user=root --password=root || exit 1
+
+      - name: Create Database
+        run: |
+          sudo mysql --user=root --password=root -e "CREATE DATABASE IF NOT EXISTS my_local_db;"
+          sudo mysql --user=root --password=root -e "SHOW DATABASES";
+
+      - name: Run SQL Scripts
+        run: |
+          for file in DatabaseAdministration/Test/Test1.sql; do
+            echo "Running SQL script: $file"
+            sudo mysql --user=root --password=root my_local_db < "$file"
+          done
+      - name: Verify Database Exists
+        run: |
+          sudo mysql --user=root --password=root -e "SHOW DATABASES;"
