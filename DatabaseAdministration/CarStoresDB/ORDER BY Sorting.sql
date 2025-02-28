@@ -6,6 +6,6 @@ ORDER BY list_price ASC;
 SELECT * FROM SalesCustomers
 ORDER BY last_name DESC;
 
---List Orders by Order Date (Newest First)
+-- List Orders by Order Date (Newest First)
 SELECT * FROM SalesOrders
 ORDER BY order_date DESC;
