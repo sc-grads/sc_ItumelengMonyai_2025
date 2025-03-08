@@ -1,0 +1,32 @@
+name: Automate SQL Tasks
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out the repository
+      uses: actions/checkout@v2
+
+    - name: Install SQL Server CLI tools
+      run: |
+        sudo apt-get install -y mssql-tools
+
+    - name: Create Database and Table
+      run: |
+        # Connect to SQL Server and run commands to create database, table, and stored procedure
+        sqlcmd -S tcp://0.tcp.ngrok.io,12345 -U Auto_user -P 'YourPassword123' -d master -Q "CREATE DATABASE AutoTest; USE AutoTest; CREATE TABLE [users] (Id INT IDENTITY(1,1) PRIMARY KEY, FirstName NVARCHAR(100), Surname NVARCHAR(100), Email NVARCHAR(100));"
+
+    - name: Create Stored Procedure
+      run: |
+        # Execute the stored procedure creation
+        sqlcmd -S tcp://0.tcp.ngrok.io,12345 -U Auto_user -P 'YourPassword123' -d AutoTest -Q "CREATE PROCEDURE InsertUser @Name NVARCHAR(100), @Surname NVARCHAR(100), @Email NVARCHAR(100) AS BEGIN INSERT INTO [user] (FirstName, Surname, Email) VALUES (@Name, @Surname, @Email); END"
+
+    - name: Insert Data Using Stored Procedure
+      run: |
+        # Insert data using the stored procedure
+        sqlcmd -S tcp://0.tcp.ngrok.io,12345 -U Auto_user -P 'YourPassword123' -d AutoTest -Q "EXEC InsertUser @Name='John', @Surname='Doe', @Email='john.doe@example.com';"
