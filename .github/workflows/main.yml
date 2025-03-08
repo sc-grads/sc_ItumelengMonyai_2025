@@ -1,0 +1,58 @@
+name: SQL Server Automation
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # To manually trigger the workflow
+
+jobs:
+  setup-sql-server:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Install SQL Server on Ubuntu
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mssql-tools unixodbc-dev
+
+      - name: Start SQL Server (Docker)
+        run: |
+          docker run -e 'ACCEPT_EULA=Y' -e 'MSSQL_SA_PASSWORD=YourPassword123' -p 1433:1433 --name sql_server -d mcr.microsoft.com/mssql/server:latest
+
+      - name: Wait for SQL Server to start
+        run: |
+          sleep 30  # Wait for SQL Server to initialize
+
+      - name: Install ngrok
+        run: |
+          curl -s https://ngrok.com/download | tar xvz
+          sudo mv ngrok /usr/local/bin
+
+      - name: Expose SQL Server via ngrok
+        run: |
+          ./ngrok tcp 1433 &
+          sleep 10  # Wait for ngrok to initialize
+
+      - name: Get ngrok forwarding URL
+        id: ngrok_url
+        run: |
+          echo "NGROK_URL=$(curl -s localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url')" >> $GITHUB_ENV
+
+      - name: Set up SQL Server connection string
+        run: |
+          export SQL_SERVER=$(echo $NGROK_URL | sed 's/tcp:\/\///')
+          echo "SQL Server is available at $SQL_SERVER"
+
+      - name: Run SQL Script to Create Database and Table
+        run: |
+          export SQL_SERVER=$(echo $NGROK_URL | sed 's/tcp:\/\///')
+          sqlcmd -S $SQL_SERVER -U SA -P 'YourPassword123' -d master -i ./setup.sql
+
+      - name: Insert data using stored procedure
+        run: |
+          sqlcmd -S $SQL_SERVER -U SA -P 'YourPassword123' -d AutoTest -Q "EXEC InsertUser 'John', 'Doe', 'john.doe@example.com';"
+
