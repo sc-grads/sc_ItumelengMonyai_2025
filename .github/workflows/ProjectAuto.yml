@@ -1,0 +1,61 @@
+name: SQL Server Setup and Test
+
+on:
+  push:
+    branches:
+      - main
+    # Trigger the workflow when a specific SQL file is changed or added
+    paths:
+      - 'sql_setup.sql'   # Adjust this path if your SQL file is in a subdirectory
+
+  pull_request:
+    branches:
+      - main
+    # Trigger the workflow when a specific SQL file is changed in a pull request
+    paths:
+      - 'sql_setup.sql'   # Adjust this path if your SQL file is in a subdirectory
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out the repository
+      uses: actions/checkout@v2
+
+    - name: Set up SQL Server tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y mssql-tools unixodbc-dev
+
+    - name: Expose SQL Server using ngrok
+      run: |
+        nohup ngrok tcp 1433 &
+
+    - name: Wait for ngrok to start
+      run: sleep 10  # Give ngrok a few seconds to initialize
+
+    - name: Get ngrok public URL
+      id: ngrok_url
+      run: |
+        PUBLIC_URL=$(curl --silent --max-time 10 --retry 5 --retry-delay 5 --retry-max-time 30 http://127.0.0.1:4040/api/tunnels | jq -r .tunnels[0].public_url)
+        echo "ngrok public URL: $PUBLIC_URL"
+        echo "PUBLIC_URL=$PUBLIC_URL" >> $GITHUB_ENV
+
+    - name: Setup SQL Server (Create Database, Table, Stored Procedure)
+      run: |
+        # Get the ngrok public URL
+        PUBLIC_URL=${{ env.PUBLIC_URL }}
+        # Extract the host and port
+        HOST=$(echo $PUBLIC_URL | sed 's/tcp:\/\///' | cut -d ':' -f 1)
+        PORT=$(echo $PUBLIC_URL | sed 's/tcp:\/\///' | cut -d ':' -f 2)
+
+        # Run SQL file using sqlcmd
+        sqlcmd -S $HOST,$PORT -U sa -P 'your_password_here' -i sql_setup.sql
+        
+        echo "Database, Table, and Stored Procedure have been created."
+        
+    - name: Verify the created table
+      run: |
+        # Verify the creation by querying the table
+        sqlcmd -S ${{ env.PUBLIC_URL }} -U Auto_user -P 'your_password_here' -d AutoTest -Q "SELECT * FROM user;"
