@@ -1,61 +1,21 @@
-name: SQL Server Setup and Test
+name: SQL Server Automation
 
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'DatabaseAdministration/sql_setup.sql'  # Trigger workflow only for changes in this specific file
-
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'DatabaseAdministration/sql_setup.sql'  # Trigger workflow only for changes in this specific file
+on: [push]
 
 jobs:
-  setup:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Check out the repository
+    - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Set up SQL Server tools
+    - name: Set up SQL Server
       run: |
-        sudo apt-get update
         sudo apt-get install -y mssql-tools unixodbc-dev
+        sqlcmd -S tcp:0.tcp.ngrok.io,14614 -U Auto_user -P 'YourPassword' -Q "CREATE DATABASE AutoTest"
+        sqlcmd -S tcp:0.tcp.ngrok.io,14614 -U Auto_user -P 'YourPassword' -d AutoTest -i create_database.sql
 
-    - name: Expose SQL Server using ngrok
+    - name: Insert data
       run: |
-        nohup ngrok tcp 1433 &
-
-    - name: Wait for ngrok to start
-      run: sleep 10  # Give ngrok a few seconds to initialize
-
-    - name: Get ngrok public URL
-      id: ngrok_url
-      run: |
-        # Use the public URL you already have
-        PUBLIC_URL="tcp:0.tcp.ngrok.io,14614"  # Replace this with your actual public URL from ngrok
-        echo "ngrok public URL: $PUBLIC_URL"
-        echo "PUBLIC_URL=$PUBLIC_URL" >> $GITHUB_ENV
-
-    - name: Setup SQL Server (Create Database, Table, Stored Procedure)
-      run: |
-        # Get the ngrok public URL from environment variables
-        PUBLIC_URL=${{ env.PUBLIC_URL }}
-        
-        # Extract the host and port from the ngrok public URL
-        HOST=$(echo $PUBLIC_URL | sed 's/tcp:\/\///' | cut -d ':' -f 1)
-        PORT=$(echo $PUBLIC_URL | sed 's/tcp:\/\///' | cut -d ':' -f 2)
-
-        # Run the SQL setup script using sqlcmd
-        sqlcmd -S $HOST,$PORT -U sa -P 'your_password_here' -i DatabaseAdministration/sql_setup.sql
-        
-        echo "Database, Table, and Stored Procedure have been created."
-        
-    - name: Verify the created table
-      run: |
-        # Verify the creation by querying the table
-        sqlcmd -S ${{ env.PUBLIC_URL }} -U Auto_user -P 'your_password_here' -d AutoTest -Q "SELECT * FROM user;"
+        sqlcmd -S tcp:0.tcp.ngrok.io,14614 -U Auto_user -P 'YourPassword' -d AutoTest -Q "EXEC InsertUser 'John', 'Doe', 'john.doe@example.com'"
