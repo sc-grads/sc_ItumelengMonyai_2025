@@ -4,16 +4,14 @@ on:
   push:
     branches:
       - main
-    # Trigger the workflow when a specific SQL file is changed or added
     paths:
-      - 'sql_setup.sql'   # Adjust this path if your SQL file is in a subdirectory
+      - 'DatabaseAdministration/sql_setup.sql'  # Trigger workflow only for changes in this specific file
 
   pull_request:
     branches:
       - main
-    # Trigger the workflow when a specific SQL file is changed in a pull request
     paths:
-      - 'sql_setup.sql'   # Adjust this path if your SQL file is in a subdirectory
+      - 'DatabaseAdministration/sql_setup.sql'  # Trigger workflow only for changes in this specific file
 
 jobs:
   setup:
@@ -38,20 +36,22 @@ jobs:
     - name: Get ngrok public URL
       id: ngrok_url
       run: |
-        PUBLIC_URL=$(curl --silent --max-time 10 --retry 5 --retry-delay 5 --retry-max-time 30 http://127.0.0.1:4040/api/tunnels | jq -r .tunnels[0].public_url)
+        # Use the public URL you already have
+        PUBLIC_URL="tcp:0.tcp.ngrok.io,14614"  # Replace this with your actual public URL from ngrok
         echo "ngrok public URL: $PUBLIC_URL"
         echo "PUBLIC_URL=$PUBLIC_URL" >> $GITHUB_ENV
 
     - name: Setup SQL Server (Create Database, Table, Stored Procedure)
       run: |
-        # Get the ngrok public URL
+        # Get the ngrok public URL from environment variables
         PUBLIC_URL=${{ env.PUBLIC_URL }}
-        # Extract the host and port
+        
+        # Extract the host and port from the ngrok public URL
         HOST=$(echo $PUBLIC_URL | sed 's/tcp:\/\///' | cut -d ':' -f 1)
         PORT=$(echo $PUBLIC_URL | sed 's/tcp:\/\///' | cut -d ':' -f 2)
 
-        # Run SQL file using sqlcmd
-        sqlcmd -S $HOST,$PORT -U sa -P 'your_password_here' -i sql_setup.sql
+        # Run the SQL setup script using sqlcmd
+        sqlcmd -S $HOST,$PORT -U sa -P 'your_password_here' -i DatabaseAdministration/sql_setup.sql
         
         echo "Database, Table, and Stored Procedure have been created."
         
