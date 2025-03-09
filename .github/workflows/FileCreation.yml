@@ -1,0 +1,25 @@
+name: File Creation Test
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  create-file:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Create a test file
+        run: |
+          echo "This is a test file." > test.txt
+
+      - name: List files
+        run: |
+          ls -la
+
+      - name: Display file content
+        run: |
+          cat test.txt
