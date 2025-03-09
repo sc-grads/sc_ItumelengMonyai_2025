@@ -14,7 +14,7 @@ jobs:
       run: |
         sudo apt-get install -y mssql-tools unixodbc-dev
         sqlcmd -S tcp:0.tcp.ngrok.io,14614 -U Auto_user -P 'YourPassword' -Q "CREATE DATABASE AutoTest"
-        sqlcmd -S tcp:0.tcp.ngrok.io,14614 -U Auto_user -P 'YourPassword' -d AutoTest -i sql_setup.sql
+        sqlcmd -S tcp:0.tcp.ngrok.io,14614 -U Auto_user -P 'YourPassword' -d AutoTest -i DatabaseAdministration/sql_setup.sql
 
     - name: Insert data
       run: |
